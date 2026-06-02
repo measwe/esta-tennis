@@ -127,7 +127,7 @@
     .sets-label { font-size: 0.75rem; color: #64748b; min-width: 36px; }
     .sets-container { display: flex; gap: 6px; flex-wrap: wrap; }
     .set-entry { display: flex; align-items: center; gap: 3px; }
-    .score-in { width: 44px; padding: 5px 6px; text-align: center; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; font-weight: 600; background: white; }
+    .score-in { width: 54px; padding: 7px 8px; text-align: center; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; font-weight: 600; background: white; }
     .score-in:focus { outline: 2px solid var(--accent); border-color: transparent; }
     .score-dash { color: #94a3b8; font-weight: 600; font-size: 0.85rem; }
     .remove-set { background: none; border: none; cursor: pointer; color: #cbd5e1; font-size: 1rem; padding: 0 2px; line-height: 1; }
@@ -138,7 +138,9 @@
     .rubber-result { font-size: 0.75rem; font-weight: 700; margin-top: 8px; }
     .rr-won  { color: var(--win); }
     .rr-lost { color: var(--loss); }
+    .rr-draw { color: #b45309; }
     .rr-none { color: #94a3b8; }
+    .rl-draw { color: #b45309; font-weight: 700; }
 
     .form-actions { display: flex; gap: 10px; margin-top: 16px; align-items: center; }
     .btn-save { padding: 9px 20px; background: var(--accent); color: white; border: none; border-radius: 9px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
@@ -387,10 +389,21 @@
   function isPast(d) { return parseDate(d) < TODAY; }
   function formatDate(s) { return parseDate(s).toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }); }
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function calcRubberWon(sets) { let u=0,t=0; sets.forEach(s=>{if(s.us>s.them)u++;else if(s.them>s.us)t++;}); return u>t; }
+  // A set only counts if at least one side reached 6 games; otherwise it's a draw set.
+  function calcRubberResult(sets) {
+    let u=0,t=0;
+    sets.forEach(s=>{
+      if(Math.max(s.us,s.them)<6) return; // neither side reached 6 — draw set, skip
+      if(s.us>s.them) u++; else if(s.them>s.us) t++;
+    });
+    if(u>t) return 'won'; if(t>u) return 'lost'; return 'draw';
+  }
+  function isWon(rb)  { return rb.won==='won'  || rb.won===true;  }
+  function isLost(rb) { return rb.won==='lost' || rb.won===false; }
+  function isDraw(rb) { return rb.won==='draw'; }
   function getMatchResult(id) {
     const r = matchResults[id]; if(!r||!r.rubbers?.length) return null;
-    let w=0,l=0; r.rubbers.forEach(rb=>{if(rb.won===true)w++;else if(rb.won===false)l++;}); return {won:w,lost:l};
+    let w=0,l=0; r.rubbers.forEach(rb=>{if(isWon(rb))w++;else if(isLost(rb))l++;}); return {won:w,lost:l};
   }
   function pct(w,t) { return t===0?'—':Math.round(w/t*100)+'%'; }
   function winPillClass(r) { if(r===null||isNaN(r))return'wp-none'; if(r>=0.6)return'wp-high'; if(r>=0.4)return'wp-mid'; return'wp-low'; }
@@ -471,8 +484,8 @@
       }
       const savedSets=sv?.sets||[];
       const setsHtml=(savedSets.length?savedSets:[null]).map((s,si)=>setEntryHtml(m.id,sec.ri,si,s)).join('');
-      const wonState=sv?.won===true?'rr-won':sv?.won===false?'rr-lost':'rr-none';
-      const wonText=sv?.won===true?'✓ Won':sv?.won===false?'✗ Lost':'—';
+      const wonState=isWon(sv||{})?'rr-won':isLost(sv||{})?'rr-lost':isDraw(sv||{})?'rr-draw':'rr-none';
+      const wonText=isWon(sv||{})?'✓ Won':isLost(sv||{})?'✗ Lost':isDraw(sv||{})?'= Draw':'—';
       return `
         <div class="rubber-section" id="rs-${m.id}-${sec.ri}">
           <div class="rubber-title" id="rt-${m.id}-${sec.ri}">${titleText} ${tBadge}</div>
@@ -536,9 +549,9 @@
     const sets=getSets(matchId,ri).filter(s=>s.us!==null&&s.them!==null);
     const el=document.getElementById(`rr-${matchId}-${ri}`);
     if(!sets.length){el.className='rubber-result rr-none';el.textContent='—';return;}
-    const won=calcRubberWon(sets);
-    el.className=`rubber-result ${won?'rr-won':'rr-lost'}`;
-    el.textContent=won?'✓ Won':'✗ Lost';
+    const res=calcRubberResult(sets);
+    el.className=`rubber-result rr-${res}`;
+    el.textContent=res==='won'?'✓ Won':res==='lost'?'✗ Lost':'= Draw';
   }
 
   function onPlayerChange(matchId) {
@@ -567,13 +580,13 @@
       const o1=document.getElementById(`o1-${matchId}-${ri}`)?.value.trim()||'';
       const o2=document.getElementById(`o2-${matchId}-${ri}`)?.value.trim()||'';
       const sets=getSets(matchId,ri).filter(s=>s.us!==null&&s.them!==null);
-      rubbers.push({type:'doubles',opponentNames:[o1,o2],sets,won:sets.length?calcRubberWon(sets):null});
+      rubbers.push({type:'doubles',opponentNames:[o1,o2],sets,won:sets.length?calcRubberResult(sets):null});
     }
     for(let ri=2;ri<4;ri++){
       const opp=document.getElementById(`opp-${matchId}-${ri}`)?.value.trim()||'';
       const ourPlayerIdx=ri===2?p1:p2;
       const sets=getSets(matchId,ri).filter(s=>s.us!==null&&s.them!==null);
-      rubbers.push({type:'singles',ourPlayerIdx,opponentName:opp,sets,won:sets.length?calcRubberWon(sets):null});
+      rubbers.push({type:'singles',ourPlayerIdx,opponentName:opp,sets,won:sets.length?calcRubberResult(sets):null});
     }
     matchResults[matchId]={players:[p1,p2].filter(p=>p!==null),rubbers};
     // Save to localStorage immediately
@@ -635,8 +648,8 @@
         if(!mr.players?.includes(pi))return; matches++;
         mr.rubbers.forEach(r=>{
           r.sets.forEach(s=>{gf+=s.us;ga+=s.them;});
-          if(r.type==='singles'&&r.ourPlayerIdx===pi){if(r.won===true)sw++;else if(r.won===false)sl++;}
-          else if(r.type==='doubles'){if(r.won===true)dw++;else if(r.won===false)dl++;}
+          if(r.type==='singles'&&r.ourPlayerIdx===pi){if(isWon(r))sw++;else if(isLost(r))sl++;}
+          else if(r.type==='doubles'){if(isWon(r))dw++;else if(isLost(r))dl++;}
         });
       });
       if(!matches)return`<tr><td class="name-cell">${pl.name}</td><td colspan="5" class="wl" style="font-style:italic">Not yet played</td></tr>`;
@@ -657,9 +670,9 @@
       const[a,b]=[...mr.players].sort((x,y)=>x-y); const key=`${a}-${b}`;
       if(!pairs[key])pairs[key]={a,b,matches:0,mw:0,dw:0,dl:0};
       pairs[key].matches++;
-      const rw=mr.rubbers.filter(r=>r.won===true).length,rl=mr.rubbers.filter(r=>r.won===false).length;
+      const rw=mr.rubbers.filter(r=>isWon(r)).length,rl=mr.rubbers.filter(r=>isLost(r)).length;
       if(rw>rl)pairs[key].mw++;
-      mr.rubbers.filter(r=>r.type==='doubles').forEach(r=>{if(r.won===true)pairs[key].dw++;else if(r.won===false)pairs[key].dl++;});
+      mr.rubbers.filter(r=>r.type==='doubles').forEach(r=>{if(isWon(r))pairs[key].dw++;else if(isLost(r))pairs[key].dl++;});
     });
     const list=Object.values(pairs);
     if(!list.length)return'<div class="no-data">No data yet.</div>';
@@ -679,7 +692,7 @@
       let played=0,mw=0,md=0;
       Object.values(matchResults).forEach(mr=>{
         if(!mr.players?.includes(pi))return; played++;
-        const rw=mr.rubbers.filter(r=>r.won===true).length,rl=mr.rubbers.filter(r=>r.won===false).length;
+        const rw=mr.rubbers.filter(r=>isWon(r)).length,rl=mr.rubbers.filter(r=>isLost(r)).length;
         if(rw>rl)mw++;else if(rw===rl)md++;
       });
       const ml=played-mw-md,rate=played?mw/played:null;
@@ -719,9 +732,9 @@
       const r=matchResults[m.id]; if(!r)return;
       let rw=0,rl=0;
       r.rubbers.forEach(rb=>{
-        if(rb.won===true){rw++;totalRW++;}else if(rb.won===false){rl++;totalRL++;}
+        if(isWon(rb)){rw++;totalRW++;}else if(isLost(rb)){rl++;totalRL++;}
         const opps=rb.type==='doubles'?(rb.opponentNames||[]):[rb.opponentName].filter(Boolean);
-        opps.forEach(opp=>{if(!opp?.trim())return;if(!oppPlayers[opp])oppPlayers[opp]={w:0,l:0};if(rb.won===true)oppPlayers[opp].l++;else if(rb.won===false)oppPlayers[opp].w++;});
+        opps.forEach(opp=>{if(!opp?.trim())return;if(!oppPlayers[opp])oppPlayers[opp]={w:0,l:0};if(isWon(rb))oppPlayers[opp].l++;else if(isLost(rb))oppPlayers[opp].w++;});
       });
       if(rw>rl)matchW++;else if(rl>rw)matchL++;else matchD++;
     });
@@ -735,7 +748,7 @@
       const r=matchResults[m.id];
       const ourStr=r?(r.players||[]).map(pi=>PLAYERS[pi]?.name||'?').join(' &amp; '):'';
       if(!r){html+=`<div class="opp-match-card"><div class="opp-match-header"><div><div class="opp-match-title">${m.label}</div><div class="opp-match-sub">${formatDate(m.date)} · ${m.location}</div></div><span class="result-badge rb-none">No data</span></div></div>`;return;}
-      const rw=r.rubbers.filter(rb=>rb.won===true).length,rl=r.rubbers.filter(rb=>rb.won===false).length;
+      const rw=r.rubbers.filter(rb=>isWon(rb)).length,rl=r.rubbers.filter(rb=>isLost(rb)).length;
       const draw=rw===rl,won=rw>rl;
       const resCls=draw?'rb-draw':won?'rb-win':'rb-loss';
       const resLbl=draw?`Draw ${rw}–${rl}`:won?`Won ${rw}–${rl}`:`Lost ${rw}–${rl}`;
@@ -744,8 +757,8 @@
         const ourSide=rb.type==='doubles'?ourStr:(rb.ourPlayerIdx!=null?PLAYERS[rb.ourPlayerIdx]?.name:'?');
         const oppSide=rb.type==='doubles'?(rb.opponentNames?.filter(Boolean).join(' / ')||'?'):(rb.opponentName||'?');
         const scoreStr=rb.sets.map(s=>`${s.us}–${s.them}`).join(', ')||'—';
-        const rc=rb.won===true?'rl-won':rb.won===false?'rl-lost':'';
-        const rt=rb.won===true?'Won':rb.won===false?'Lost':'—';
+        const rc=isWon(rb)?'rl-won':isLost(rb)?'rl-lost':isDraw(rb)?'rl-draw':'';
+        const rt=isWon(rb)?'Won':isLost(rb)?'Lost':isDraw(rb)?'Draw':'—';
         return`<div class="rubber-line"><span class="rl-type">${typeLabel}</span><span class="rl-players">${esc(ourSide)} vs ${esc(oppSide)}</span><span class="rl-score">${scoreStr}</span><span class="rl-result ${rc}">${rt}</span></div>`;
       }).join('');
       html+=`<div class="opp-match-card"><div class="opp-match-header"><div><div class="opp-match-title">${m.label} · ${ourStr}</div><div class="opp-match-sub">${formatDate(m.date)} · ${m.location}</div></div><span class="result-badge ${resCls}">${resLbl}</span></div><div class="rubber-lines">${lines}</div></div>`;
