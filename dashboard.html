@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESTA Tennis – Season Dashboard</title>
+  <style>
+    :root {
+      --playing-color: #15803d;
+      --playing-bg: #dcfce7;
+      --canplay-color: #b45309;
+      --canplay-bg: #fef3c7;
+      --selected-color: #1d4ed8;
+      --selected-bg: #dbeafe;
+      --cantplay-color: #b91c1c;
+      --cantplay-bg: #fee2e2;
+      --unknown-color: #6b7280;
+      --unknown-bg: #f3f4f6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #0f2444 0%, #1d4ed8 100%);
+      color: white;
+      padding: 28px 32px 24px;
+    }
+    .header h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
+    .header .sub { opacity: 0.75; margin-top: 6px; font-size: 0.95rem; }
+    .header-chips { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .header-chip {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    /* ── Main ── */
+    .main { max-width: 1280px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── Stats ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px 16px;
+      border: 1px solid #e2e8f0;
+      text-align: center;
+    }
+    .stat-card .num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #1d4ed8;
+      line-height: 1;
+    }
+    .stat-card .lbl {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      margin-top: 6px;
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .tip {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+
+    /* ── Match Grid ── */
+    .matches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 18px;
+      margin-bottom: 44px;
+    }
+
+    .match-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .match-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); transform: translateY(-1px); }
+    .match-card.is-past { opacity: 0.65; }
+    .match-card.is-next { border: 2px solid #1d4ed8; box-shadow: 0 0 0 4px rgba(29,78,216,0.08); }
+    .match-card.is-knockout { border: 1px solid #f59e0b; }
+
+    .card-top {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .match-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #94a3b8;
+    }
+    .badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-home    { background: #dbeafe; color: #1d4ed8; }
+    .badge-away    { background: #fce7f3; color: #9d174d; }
+    .badge-past    { background: #f1f5f9; color: #64748b; }
+    .badge-next    { background: #d1fae5; color: #065f46; }
+    .badge-special { background: #fef3c7; color: #92400e; }
+
+    .opponent {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .match-date {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-top: 3px;
+    }
+
+    .card-body { padding: 14px 18px 16px; }
+
+    .avail-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .avail-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
+    .avail-count {
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .avail-count.good  { color: #15803d; }
+    .avail-count.ok    { color: #b45309; }
+    .avail-count.tight { color: #b91c1c; }
+
+    .avail-bar {
+      display: flex;
+      height: 5px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #f1f5f9;
+      margin-bottom: 14px;
+    }
+    .bar-seg { transition: width 0.4s; }
+    .bar-playing  { background: #15803d; }
+    .bar-selected { background: #1d4ed8; }
+    .bar-canplay  { background: #f59e0b; }
+    .bar-cantplay { background: #ef4444; }
+
+    .players-list { display: flex; flex-direction: column; gap: 7px; }
+    .player-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .player-name {
+      font-size: 0.875rem;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .status-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .pill-playing  { background: var(--playing-bg);  color: var(--playing-color);  cursor: pointer; }
+    .pill-playing:hover  { background: #bbf7d0; }
+    .pill-canplay  { background: var(--canplay-bg);  color: var(--canplay-color);  cursor: pointer; border: 1px dashed var(--canplay-color); }
+    .pill-canplay:hover  { background: #fde68a; }
+    .pill-cantplay { background: var(--cantplay-bg); color: var(--cantplay-color); cursor: pointer; }
+    .pill-cantplay:hover { background: #fecaca; }
+    .pill-unknown  { background: var(--unknown-bg);  color: var(--unknown-color);  cursor: pointer; border: 1px dashed #cbd5e1; }
+    .pill-unknown:hover  { background: #e5e7eb; }
+
+    /* ── Player Summary Table ── */
+    .table-wrap {
+      background: white;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+    .summary-table { width: 100%; border-collapse: collapse; }
+    .summary-table th {
+      background: #f8fafc;
+      padding: 11px 16px;
+      text-align: left;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .summary-table td {
+      padding: 13px 16px;
+      border-bottom: 1px solid #f8fafc;
+      font-size: 0.88rem;
+    }
+    .summary-table tr:last-child td { border-bottom: none; }
+    .player-cell { font-weight: 700; color: #0f172a; }
+
+    .mini-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 12px;
+    }
+    .mini-playing  { background: var(--playing-bg);  color: var(--playing-color);  }
+    .mini-canplay  { background: var(--canplay-bg);  color: var(--canplay-color);  }
+    .mini-cantplay { background: var(--cantplay-bg); color: var(--cantplay-color); }
+
+    .season-bar {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+    .season-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      title: '';
+    }
+
+    /* ── Next match banner ── */
+    .next-banner {
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      color: white;
+      border-radius: 14px;
+      padding: 18px 24px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .next-banner .nxt-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; margin-bottom: 4px; }
+    .next-banner .nxt-opponent { font-size: 1.3rem; font-weight: 800; }
+    .next-banner .nxt-detail { opacity: 0.8; font-size: 0.88rem; margin-top: 3px; }
+    .next-banner .nxt-avail {
+      background: rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 10px 18px;
+      text-align: center;
+      font-size: 0.8rem;
+    }
+    .next-banner .nxt-avail .big { font-size: 1.8rem; font-weight: 800; display: block; line-height: 1; }
+
+    /* ── Sidebar ── */
+    body { margin-left: 200px; }
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
+      background: #0f2444; display: flex; flex-direction: column; z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); color: white;
+    }
+    .sidebar-brand .s-team { font-size: 0.95rem; font-weight: 800; }
+    .sidebar-brand .s-grade { font-size: 0.7rem; opacity: 0.5; margin-top: 2px; }
+    .nav-section { padding: 16px 0 4px; }
+    .nav-section-label {
+      padding: 0 16px 6px; font-size: 0.62rem; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.3); font-weight: 600;
+    }
+    .nav-link {
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.85rem; font-weight: 500;
+      transition: background 0.15s, color 0.15s; border-left: 3px solid transparent;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.07); color: white; }
+    .nav-link.active { background: rgba(255,255,255,0.1); color: white; border-left-color: #3b82f6; }
+    .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+
+    @media (max-width: 768px) {
+      body { margin-left: 0; }
+      .sidebar { display: none; }
+      .header { padding: 20px 16px; }
+      .main { padding: 20px 14px; }
+      .matches-grid { grid-template-columns: 1fr; }
+      .summary-table th:nth-child(n+4),
+      .summary-table td:nth-child(n+4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="s-team">Snape Park 7</div>
+    <div class="s-grade">ESTA · Grade 6/1</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Navigation</div>
+    <a href="dashboard.html" class="nav-link active">
+      <span class="nav-icon">📅</span> Schedule
+    </a>
+    <a href="results.html" class="nav-link">
+      <span class="nav-icon">📊</span> Results &amp; Stats
+    </a>
+  </div>
+</nav>
+
+<header class="header">
+  <h1>Snape Park 7</h1>
+  <p class="sub">Season Dashboard · ESTA Grade 6/1</p>
+  <div class="header-chips">
+    <span class="header-chip">Home Court 4</span>
+    <span class="header-chip">4 Players</span>
+    <span class="header-chip">10 Matches + Finals</span>
+    <span class="header-chip" id="today-chip"></span>
+  </div>
+</header>
+
+<main class="main">
+  <div class="stats-row" id="stats-row"></div>
+  <div id="next-banner"></div>
+
+  <h2 class="section-title">All Matches</h2>
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:#15803d"></span> Playing</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Can Play</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Can't Play</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#cbd5e1"></span> Not set</span>
+  </div>
+  <p class="tip">Click any pill to cycle its status: Can Play → Playing → Can't Play → Can Play. Changes are saved automatically.</p>
+  <div class="matches-grid" id="matches-grid"></div>
+
+  <h2 class="section-title">Player Summary</h2>
+  <div class="table-wrap">
+    <table class="summary-table" id="summary-table">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Confirmed</th>
+          <th>Available</th>
+          <th>Can't Play</th>
+          <th>Unknown</th>
+          <th>Season Availability</th>
+        </tr>
+      </thead>
+      <tbody id="summary-body"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  const TODAY = new Date('2026-06-02');
+
+  const MATCHES = [
+    { id: 0, date: '2026-05-17', opponent: 'Eastside 6',   location: 'Home', type: 'regular', label: 'Match 1' },
+    { id: 1, date: '2026-05-24', opponent: 'Snape Park 6', location: 'Away', type: 'regular', label: 'Match 2' },
+    { id: 2, date: '2026-05-31', opponent: 'Snape Park 5', location: 'Home', type: 'regular', label: 'Match 3' },
+    { id: 3, date: '2026-06-14', opponent: 'CBT 6',         location: 'Away', type: 'regular', label: 'Match 4' },
+    { id: 4, date: '2026-06-21', opponent: 'Eastside 7',   location: 'Away', type: 'regular', label: 'Match 5' },
+    { id: 5, date: '2026-06-28', opponent: 'Eastside 6',   location: 'Away', type: 'regular', label: 'Match 6' },
+    { id: 6, date: '2026-07-05', opponent: 'Snape Park 6', location: 'Home', type: 'regular', label: 'Match 7' },
+    { id: 7, date: '2026-07-12', opponent: 'Snape Park 5', location: 'Away', type: 'regular', label: 'Match 8' },
+    { id: 8, date: '2026-07-19', opponent: 'CBT 6',         location: 'Home', type: 'regular', label: 'Match 9' },
+    { id: 9, date: '2026-07-26', opponent: 'Eastside 7',   location: 'Away', type: 'regular', label: 'Match 10' },
+    { id: 10, date: '2026-08-02', opponent: 'TBD',          location: 'TBD',  type: 'knockout', label: 'Semi-Final' },
+    { id: 11, date: '2026-08-09', opponent: 'TBD',          location: 'TBD',  type: 'knockout', label: 'Final' },
+  ];
+
+  const PLAYERS = [
+    {
+      name: 'Kim Waugh',
+      availability: ["Can't play","Can't play","Playing","Playing","Can Play","Can Play","Can Play","Playing","Can Play","Can Play","Can Play",null]
+    },
+    {
+      name: 'Carl Petrou',
+      availability: ["Can't play","Playing","Playing","Can't play","Can Play","Can Play","Can Play","Can't play","Can Play","Can Play","Can Play",null]
+    },
+    {
+      name: 'Atsushi Oshiba',
+      availability: ["Playing","Playing","Can't play","Playing","Can't play","Can't play","Can't play","Can't play","Can't play","Can Play","Can Play",null]
+    },
+    {
+      name: 'Ricky Lopis',
+      availability: ["Playing","Can't play","Can Play","Can't play","Can Play","Can Play","Can Play","Playing","Can Play","Can Play","Can Play",null]
+    }
+  ];
+
+  // ── State (persisted to localStorage) ──
+  const STORAGE_KEY = 'esta_overrides';
+  function loadOverrides() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch { return {}; }
+  }
+  function saveOverrides(o) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(o));
+  }
+  let overrides = loadOverrides(); // { "matchId-playerIdx": "playing"|"canplay"|"cantplay"|"unknown" }
+
+  function selKey(matchId, playerIdx) { return `${matchId}-${playerIdx}`; }
+
+  const CYCLE = ['canplay', 'playing', 'cantplay'];
+
+  function getBaseStatus(matchId, playerIdx) {
+    const raw = (PLAYERS[playerIdx].availability[matchId] || '').trim();
+    if (raw === 'Playing')    return 'playing';
+    if (raw === "Can't play") return 'cantplay';
+    if (raw === 'Can Play')   return 'canplay';
+    return 'unknown';
+  }
+
+  function getStatus(matchId, playerIdx) {
+    const k = selKey(matchId, playerIdx);
+    return overrides[k] || getBaseStatus(matchId, playerIdx);
+  }
+
+  function cycleStatus(matchId, playerIdx) {
+    const current = getStatus(matchId, playerIdx);
+    const idx = CYCLE.indexOf(current);
+    const next = idx === -1 ? 'canplay' : CYCLE[(idx + 1) % CYCLE.length];
+    overrides[selKey(matchId, playerIdx)] = next;
+    saveOverrides(overrides);
+    render();
+  }
+
+  // ── Helpers ──
+  function parseDate(str) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function formatDate(str) {
+    const d = parseDate(str);
+    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function isPast(dateStr) { return parseDate(dateStr) < TODAY; }
+  function isToday(dateStr) { return parseDate(dateStr).toDateString() === TODAY.toDateString(); }
+
+  function availableCount(matchId) {
+    return PLAYERS.filter((_, i) => {
+      const s = getStatus(matchId, i);
+      return s === 'playing' || s === 'canplay';
+    }).length;
+  }
+
+  function confirmedCount(matchId) {
+    return PLAYERS.filter((_, i) => getStatus(matchId, i) === 'playing').length;
+  }
+
+  function pillLabel(status) {
+    return { playing: 'Playing', canplay: 'Can Play', cantplay: "Can't Play", unknown: '—' }[status] || '—';
+  }
+
+  function pillClass(status) {
+    return { playing: 'pill-playing', canplay: 'pill-canplay', cantplay: 'pill-cantplay', unknown: 'pill-unknown' }[status] || 'pill-unknown';
+  }
+
+  function dotColor(status) {
+    return { playing: '#15803d', canplay: '#f59e0b', cantplay: '#ef4444', unknown: '#cbd5e1' }[status] || '#cbd5e1';
+  }
+
+  // ── Render ──
+  function render() {
+    renderHeader();
+    renderStats();
+    renderNextBanner();
+    renderMatches();
+    renderSummary();
+  }
+
+  function renderHeader() {
+    document.getElementById('today-chip').textContent = TODAY.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function renderStats() {
+    const played   = MATCHES.filter(m => isPast(m.date) && m.type === 'regular').length;
+    const upcoming = MATCHES.filter(m => !isPast(m.date) && m.type === 'regular').length;
+    const nextMatch = MATCHES.find(m => !isPast(m.date));
+    const daysToNext = nextMatch ? Math.ceil((parseDate(nextMatch.date) - TODAY) / 86400000) : 0;
+
+    const totalAvail = MATCHES.reduce((sum, m) => sum + availableCount(m.id), 0);
+    const avgAvail = (totalAvail / MATCHES.length).toFixed(1);
+
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card"><div class="num">${played}</div><div class="lbl">Played</div></div>
+      <div class="stat-card"><div class="num">${upcoming}</div><div class="lbl">Remaining</div></div>
+      <div class="stat-card"><div class="num">${daysToNext}</div><div class="lbl">Days to Next</div></div>
+      <div class="stat-card"><div class="num">${PLAYERS.length}</div><div class="lbl">Players</div></div>
+      <div class="stat-card"><div class="num">${avgAvail}</div><div class="lbl">Avg Available</div></div>
+    `;
+  }
+
+  function renderNextBanner() {
+    const nextMatch = MATCHES.find(m => !isPast(m.date));
+    if (!nextMatch) { document.getElementById('next-banner').innerHTML = ''; return; }
+    const avail = availableCount(nextMatch.id);
+    const confirmed = confirmedCount(nextMatch.id);
+    const playerList = PLAYERS.map((p, i) => {
+      const s = getStatus(nextMatch.id, i);
+      return `<span style="
+        display:inline-block;
+        margin:2px 3px;
+        padding:3px 10px;
+        border-radius:20px;
+        font-size:0.75rem;
+        font-weight:600;
+        background:${s==='playing'?'rgba(255,255,255,0.25)':s==='canplay'?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.07)'};
+        opacity:${s==='cantplay'?0.5:1};
+        text-decoration:${s==='cantplay'?'line-through':'none'};
+        border:1px solid rgba(255,255,255,${s==='playing'||s==='selected'?0.5:0.15});
+      ">${p.name.split(' ')[0]}</span>`;
+    }).join('');
+
+    document.getElementById('next-banner').innerHTML = `
+      <div class="next-banner">
+        <div>
+          <div class="nxt-label">Next Match · ${nextMatch.label}</div>
+          <div class="nxt-opponent">vs ${nextMatch.opponent}</div>
+          <div class="nxt-detail">${formatDate(nextMatch.date)} · ${nextMatch.location}</div>
+          <div style="margin-top:10px">${playerList}</div>
+        </div>
+        <div class="nxt-avail">
+          <span class="big">${avail}</span>
+          <span style="opacity:0.8">of ${PLAYERS.length} available</span>
+          <div style="margin-top:4px; opacity:0.8; font-size:0.75rem">${confirmed} confirmed</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderMatches() {
+    const nextMatch = MATCHES.find(m => !isPast(m.date));
+    const html = MATCHES.map(match => {
+      const past = isPast(match.date);
+      const isNext = nextMatch && match.id === nextMatch.id;
+      const avail = availableCount(match.id);
+      const confirmed = confirmedCount(match.id);
+
+      // status counts for bar
+      const counts = { playing: 0, selected: 0, canplay: 0, cantplay: 0, unknown: 0 };
+      PLAYERS.forEach((_, i) => counts[getStatus(match.id, i)]++);
+      const total = PLAYERS.length;
+      const pct = s => `${(counts[s] / total * 100).toFixed(1)}%`;
+
+      const availClass = avail >= 3 ? 'good' : avail >= 2 ? 'ok' : 'tight';
+
+      const locationBadge = match.type === 'knockout'
+        ? `<span class="badge badge-special">Knockout</span>`
+        : match.location === 'Home'
+          ? `<span class="badge badge-home">Home</span>`
+          : `<span class="badge badge-away">Away</span>`;
+
+      const statusBadge = past
+        ? `<span class="badge badge-past">Played</span>`
+        : isNext
+          ? `<span class="badge badge-next">Next Up</span>`
+          : '';
+
+      const playerRows = PLAYERS.map((p, i) => {
+        const s = getStatus(match.id, i);
+        return `
+          <div class="player-row">
+            <span class="player-name">${p.name}</span>
+            <span class="status-pill ${pillClass(s)}"
+              onclick="cycleStatus(${match.id}, ${i})"
+              title="Click to change status"
+            >${pillLabel(s)}</span>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="match-card ${past ? 'is-past' : ''} ${isNext ? 'is-next' : ''} ${match.type === 'knockout' ? 'is-knockout' : ''}">
+          <div class="card-top">
+            <div class="card-meta">
+              <span class="match-label">${match.label}</span>
+              ${locationBadge}
+              ${statusBadge}
+            </div>
+            <div class="opponent">${match.type === 'knockout' ? match.label : `vs ${match.opponent}`}</div>
+            <div class="match-date">${formatDate(match.date)}${match.type !== 'knockout' && match.location !== 'TBD' ? ' · ' + match.location : ''}</div>
+          </div>
+          <div class="card-body">
+            <div class="avail-row">
+              <span class="avail-label">Available</span>
+              <span class="avail-count ${availClass}">${avail} / ${total} &nbsp;·&nbsp; ${confirmed} confirmed</span>
+            </div>
+            <div class="avail-bar">
+              <div class="bar-seg bar-playing"  style="width:${pct('playing')}"></div>
+              <div class="bar-seg bar-selected" style="width:${pct('selected')}"></div>
+              <div class="bar-seg bar-canplay"  style="width:${pct('canplay')}"></div>
+              <div class="bar-seg bar-cantplay" style="width:${pct('cantplay')}"></div>
+            </div>
+            <div class="players-list">${playerRows}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('matches-grid').innerHTML = html;
+  }
+
+  function renderSummary() {
+    const rows = PLAYERS.map((p, pi) => {
+      let playing = 0, canplay = 0, cantplay = 0, unknown = 0;
+      MATCHES.forEach(m => {
+        const s = getStatus(m.id, pi);
+        if (s === 'playing' || s === 'selected') playing++;
+        else if (s === 'canplay') canplay++;
+        else if (s === 'cantplay') cantplay++;
+        else unknown++;
+      });
+
+      const dots = MATCHES.map(m => {
+        const s = getStatus(m.id, pi);
+        return `<span class="season-dot" style="background:${dotColor(s)}" title="${m.label}: ${pillLabel(s)}"></span>`;
+      }).join('');
+
+      return `
+        <tr>
+          <td class="player-cell">${p.name}</td>
+          <td><span class="mini-pill mini-playing">${playing}</span></td>
+          <td><span class="mini-pill mini-canplay">${canplay}</span></td>
+          <td><span class="mini-pill mini-cantplay">${cantplay}</span></td>
+          <td style="color:#94a3b8">${unknown}</td>
+          <td><div class="season-bar">${dots}</div></td>
+        </tr>
+      `;
+    }).join('');
+
+    document.getElementById('summary-body').innerHTML = rows;
+  }
+
+  render();
+</script>
+</body>
+</html>
