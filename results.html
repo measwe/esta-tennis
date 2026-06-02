@@ -275,13 +275,11 @@
 </main>
 
 <script>
-  // ── GitHub config ──
-  const GH_OWNER = 'measwe';
-  const GH_REPO  = 'esta-tennis';
-  const GH_FILE  = 'data/results.json';
+  // ── Data storage: GitHub Gist (separate from the code repo so code updates never touch it) ──
+  const GH_GIST_ID  = '4f1e8974f9e60d4a8a9e3de729ca42e9';
   const GH_TOKEN_KEY = 'esta_gh_token';
-  const GH_RAW = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/${GH_FILE}`;
-  const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
+  const GH_RAW = `https://gist.githubusercontent.com/measwe/${GH_GIST_ID}/raw/results.json`;
+  const GH_API = `https://api.github.com/gists/${GH_GIST_ID}`;
 
   function getToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
   function hasToken() { return !!getToken(); }
@@ -320,7 +318,7 @@
     document.getElementById('match-list').innerHTML =
       '<div class="loading-state"><span class="spinner"></span>Loading results…</div>';
     try {
-      const resp = await fetch(`${GH_RAW}?_=${Date.now()}`);
+      const resp = await fetch(`${GH_RAW}?nocache=${Date.now()}`);
       if (resp.ok) {
         const data = await resp.json();
         matchResults = data.results || {};
@@ -336,24 +334,11 @@
   async function pushToGitHub() {
     const token = getToken();
     if (!token) throw new Error('no-token');
-
-    // Get current file SHA (needed for updates)
-    let sha;
-    const metaResp = await fetch(GH_API, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
-    });
-    if (metaResp.ok) sha = (await metaResp.json()).sha;
-
-    const body = {
-      message: 'Update match results',
-      content: toBase64(JSON.stringify({ results: matchResults }, null, 2)),
-    };
-    if (sha) body.sha = sha;
-
+    // Gist PATCH needs no SHA — data lives outside the code repo and can never be overwritten by a code push
     const resp = await fetch(GH_API, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({ files: { 'results.json': { content: JSON.stringify({ results: matchResults }, null, 2) } } })
     });
     if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.message || 'save-failed'); }
   }
