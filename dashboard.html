@@ -536,7 +536,6 @@
       <div class="stat-card"><div class="num">${upcoming}</div><div class="lbl">Remaining</div></div>
       <div class="stat-card"><div class="num">${daysToNext}</div><div class="lbl">Days to Next</div></div>
       <div class="stat-card"><div class="num">${PLAYERS.length}</div><div class="lbl">Players</div></div>
-      <div class="stat-card"><div class="num">${avgAvail}</div><div class="lbl">Avg Available</div></div>
     `;
   }
 
@@ -568,11 +567,6 @@
           <div class="nxt-opponent">vs ${nextMatch.opponent}</div>
           <div class="nxt-detail">${formatDate(nextMatch.date)} · ${nextMatch.location}</div>
           <div style="margin-top:10px">${playerList}</div>
-        </div>
-        <div class="nxt-avail">
-          <span class="big">${avail}</span>
-          <span style="opacity:0.8">of ${PLAYERS.length} available</span>
-          <div style="margin-top:4px; opacity:0.8; font-size:0.75rem">${confirmed} confirmed</div>
         </div>
       </div>
     `;
@@ -631,16 +625,6 @@
             <div class="match-date">${formatDate(match.date)}${match.type !== 'knockout' && match.location !== 'TBD' ? ' · ' + match.location : ''}</div>
           </div>
           <div class="card-body">
-            <div class="avail-row">
-              <span class="avail-label">Available</span>
-              <span class="avail-count ${availClass}">${avail} / ${total} &nbsp;·&nbsp; ${confirmed} confirmed</span>
-            </div>
-            <div class="avail-bar">
-              <div class="bar-seg bar-playing"  style="width:${pct('playing')}"></div>
-              <div class="bar-seg bar-selected" style="width:${pct('selected')}"></div>
-              <div class="bar-seg bar-canplay"  style="width:${pct('canplay')}"></div>
-              <div class="bar-seg bar-cantplay" style="width:${pct('cantplay')}"></div>
-            </div>
             <div class="players-list">${playerRows}</div>
           </div>
         </div>
