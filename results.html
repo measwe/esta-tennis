@@ -740,7 +740,7 @@
       r.rubbers.forEach(rb=>{
         if(isWon(rb)){rw++;totalRW++;}else if(isLost(rb)){rl++;totalRL++;}
         const opps=rb.type==='doubles'?(rb.opponentNames||[]):[rb.opponentName].filter(Boolean);
-        opps.forEach(opp=>{if(!opp?.trim())return;if(!oppPlayers[opp])oppPlayers[opp]={w:0,l:0};if(isWon(rb))oppPlayers[opp].l++;else if(isLost(rb))oppPlayers[opp].w++;});
+        opps.forEach(opp=>{if(!opp?.trim())return;if(!oppPlayers[opp])oppPlayers[opp]={w:0,l:0};if(isWon(rb))oppPlayers[opp].w++;else if(isLost(rb))oppPlayers[opp].l++;});
       });
       if(rw>rl)matchW++;else if(rl>rw)matchL++;else matchD++;
     });
