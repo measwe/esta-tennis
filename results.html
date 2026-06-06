@@ -457,11 +457,22 @@
       const titleText=sec.title+(isD?'':singlesName);
       let oppHtml;
       if(isD){
-        const o1=esc(sv?.opponentNames?.[0]||''),o2=esc(sv?.opponentNames?.[1]||'');
-        oppHtml=`<div class="opp-row"><label>vs</label>
-          <input class="opp-input" id="o1-${m.id}-${sec.ri}" placeholder="Opponent 1" value="${o1}">
-          <span style="color:#94a3b8">/</span>
-          <input class="opp-input" id="o2-${m.id}-${sec.ri}" placeholder="Opponent 2" value="${o2}"></div>`;
+        if(sec.ri===0){
+          const savedNames=rubbers[0]?.opponentNames||rubbers[1]?.opponentNames||[];
+          const o1=esc(savedNames[0]||''),o2=esc(savedNames[1]||'');
+          oppHtml=`<div class="opp-row"><label>vs</label>
+            <input class="opp-input" id="o1-${m.id}-0" placeholder="Opponent 1" value="${o1}" oninput="syncDoubleOpp(${m.id})">
+            <span style="color:#94a3b8">/</span>
+            <input class="opp-input" id="o2-${m.id}-0" placeholder="Opponent 2" value="${o2}" oninput="syncDoubleOpp(${m.id})"></div>`;
+        } else {
+          const savedNames=rubbers[0]?.opponentNames||rubbers[1]?.opponentNames||[];
+          const dn1=esc(savedNames[0]||''),dn2=esc(savedNames[1]||'');
+          oppHtml=`<div class="opp-row"><label>vs</label>
+            <span id="d2-o1-${m.id}" class="opp-input" style="display:inline-flex;align-items:center;background:#f8fafc;color:${dn1?'#374151':'#94a3b8'};font-style:italic;cursor:default">${dn1||'same as Rubber 1'}</span>
+            <span style="color:#94a3b8">/</span>
+            <span id="d2-o2-${m.id}" class="opp-input" style="display:inline-flex;align-items:center;background:#f8fafc;color:${dn2?'#374151':'#94a3b8'};font-style:italic;cursor:default">${dn2||'same as Rubber 1'}</span>
+          </div>`;
+        }
       } else {
         const o=esc(sv?.opponentName||'');
         oppHtml=`<div class="opp-row"><label>vs</label>
@@ -554,6 +565,15 @@
     if(t3)t3.innerHTML=`Singles${n2} <span class="rtb rtb-singles">Singles</span>`;
   }
 
+  function syncDoubleOpp(matchId) {
+    const n1=document.getElementById(`o1-${matchId}-0`)?.value||'';
+    const n2=document.getElementById(`o2-${matchId}-0`)?.value||'';
+    const d1=document.getElementById(`d2-o1-${matchId}`);
+    const d2=document.getElementById(`d2-o2-${matchId}`);
+    if(d1){d1.textContent=n1||'same as Rubber 1';d1.style.color=n1?'#374151':'#94a3b8';}
+    if(d2){d2.textContent=n2||'same as Rubber 1';d2.style.color=n2?'#374151':'#94a3b8';}
+  }
+
   function getPlayerSel(matchId,num) {
     const sel=document.getElementById(`ps${num}-${matchId}`);
     return sel&&sel.value!==''?parseInt(sel.value):null;
@@ -562,11 +582,11 @@
   function saveMatch(matchId) {
     const p1=getPlayerSel(matchId,1), p2=getPlayerSel(matchId,2);
     const rubbers=[];
+    const do1=document.getElementById(`o1-${matchId}-0`)?.value.trim()||'';
+    const do2=document.getElementById(`o2-${matchId}-0`)?.value.trim()||'';
     for(let ri=0;ri<2;ri++){
-      const o1=document.getElementById(`o1-${matchId}-${ri}`)?.value.trim()||'';
-      const o2=document.getElementById(`o2-${matchId}-${ri}`)?.value.trim()||'';
       const sets=getSets(matchId,ri).filter(s=>s.us!==null&&s.them!==null);
-      rubbers.push({type:'doubles',opponentNames:[o1,o2],sets,won:sets.length?calcRubberResult(sets):null});
+      rubbers.push({type:'doubles',opponentNames:[do1,do2],sets,won:sets.length?calcRubberResult(sets):null});
     }
     for(let ri=2;ri<4;ri++){
       const opp=document.getElementById(`opp-${matchId}-${ri}`)?.value.trim()||'';
@@ -732,22 +752,24 @@
     </div>`;
     past.forEach(m=>{
       const r=matchResults[m.id];
-      const ourStr=r?(r.players||[]).map(pi=>PLAYERS[pi]?.name||'?').join(' &amp; '):'';
+      const ourStr=r?(r.players||[]).map(pi=>PLAYERS[pi]?.name||'?').join(' & '):'';
       if(!r){html+=`<div class="opp-match-card"><div class="opp-match-header"><div><div class="opp-match-title">${m.label}</div><div class="opp-match-sub">${formatDate(m.date)} · ${m.location}</div></div><span class="result-badge rb-none">No data</span></div></div>`;return;}
       const rw=r.rubbers.filter(rb=>isWon(rb)).length,rl=r.rubbers.filter(rb=>isLost(rb)).length;
       const draw=rw===rl,won=rw>rl;
       const resCls=draw?'rb-draw':won?'rb-win':'rb-loss';
       const resLbl=draw?`Draw ${rw}–${rl}`:won?`Won ${rw}–${rl}`:`Lost ${rw}–${rl}`;
+      const doublesOppNames=r.rubbers.filter(rb=>rb.type==='doubles').map(rb=>(rb.opponentNames||[]).filter(Boolean)).find(n=>n.length)||[];
       const lines=r.rubbers.map(rb=>{
         const typeLabel=rb.type==='doubles'?'Doubles':'Singles';
         const ourSide=rb.type==='doubles'?ourStr:(rb.ourPlayerIdx!=null?PLAYERS[rb.ourPlayerIdx]?.name:'?');
-        const oppSide=rb.type==='doubles'?(rb.opponentNames?.filter(Boolean).join(' / ')||'?'):(rb.opponentName||'?');
+        const oppNames=rb.type==='doubles'?((rb.opponentNames||[]).filter(Boolean).length?(rb.opponentNames||[]).filter(Boolean):doublesOppNames):[];
+        const oppSide=rb.type==='doubles'?(oppNames.join(' / ')||'?'):(rb.opponentName||'?');
         const scoreStr=rb.sets.map(s=>`${s.us}–${s.them}`).join(', ')||'—';
         const rc=isWon(rb)?'rl-won':isLost(rb)?'rl-lost':isDraw(rb)?'rl-draw':'';
         const rt=isWon(rb)?'Won':isLost(rb)?'Lost':isDraw(rb)?'Draw':'—';
         return`<div class="rubber-line"><span class="rl-type">${typeLabel}</span><span class="rl-players">${esc(ourSide)} vs ${esc(oppSide)}</span><span class="rl-score">${scoreStr}</span><span class="rl-result ${rc}">${rt}</span></div>`;
       }).join('');
-      html+=`<div class="opp-match-card"><div class="opp-match-header"><div><div class="opp-match-title">${m.label} · ${ourStr}</div><div class="opp-match-sub">${formatDate(m.date)} · ${m.location}</div></div><span class="result-badge ${resCls}">${resLbl}</span></div><div class="rubber-lines">${lines}</div></div>`;
+      html+=`<div class="opp-match-card"><div class="opp-match-header"><div><div class="opp-match-title">${m.label} · ${esc(ourStr)}</div><div class="opp-match-sub">${formatDate(m.date)} · ${m.location}</div></div><span class="result-badge ${resCls}">${resLbl}</span></div><div class="rubber-lines">${lines}</div></div>`;
     });
     const h2h=Object.entries(oppPlayers).filter(([,r])=>r.w+r.l>0);
     if(h2h.length){
