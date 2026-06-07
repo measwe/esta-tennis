@@ -245,15 +245,15 @@
 
 <div class="settings-panel" id="settings-panel">
   <h3>Captain Settings — Save Results</h3>
-  <p>Teammates can view all results without any setup. Only the captain needs a GitHub token to save results to the shared database.</p>
+  <p>Teammates can view all results without any setup. Only the captain needs the save key to save results to the shared database.</p>
   <div class="token-row">
-    <input type="password" class="token-input" id="token-input" placeholder="Paste your GitHub Personal Access Token (ghp_...)">
-    <button class="btn-save-token" onclick="saveToken()">Save Token</button>
+    <input type="password" class="token-input" id="token-input" placeholder="Paste the captain save key">
+    <button class="btn-save-token" onclick="saveToken()">Save Key</button>
     <button class="btn-clear-token" onclick="clearToken()">Remove</button>
   </div>
   <div class="token-status" id="token-status"></div>
   <div class="token-help">
-    Need a token? <a href="https://github.com/settings/tokens/new?scopes=gist&description=ESTA+Tennis+Dashboard" target="_blank">Create one on GitHub</a> — select the <strong>gist</strong> scope, then copy and paste it above.
+    The save key is stored on the team server. Ask the admin for it, then paste it above — it's kept only in this browser.
   </div>
 </div>
 
@@ -276,11 +276,10 @@
 </main>
 
 <script>
-  // ── Data storage: GitHub Gist (separate from the code repo so code updates never touch it) ──
-  const GH_GIST_ID  = '4f1e8974f9e60d4a8a9e3de729ca42e9';
-  const GH_TOKEN_KEY = 'esta_gh_token';
-  const GH_RAW = `https://gist.githubusercontent.com/measwe/${GH_GIST_ID}/raw/results.json`;
-  const GH_API = `https://api.github.com/gists/${GH_GIST_ID}`;
+  // ── Data storage: ESTA VPS (separate from the code repo so code updates never touch it) ──
+  const API_BASE   = 'https://srv1738178.hstgr.cloud';
+  const API_URL    = `${API_BASE}/results.json`;
+  const GH_TOKEN_KEY = 'esta_vps_token';
 
   function getToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
   function hasToken() { return !!getToken(); }
@@ -319,7 +318,7 @@
     document.getElementById('match-list').innerHTML =
       '<div class="loading-state"><span class="spinner"></span>Loading results…</div>';
     try {
-      const resp = await fetch(`${GH_RAW}?nocache=${Date.now()}`);
+      const resp = await fetch(`${API_URL}?nocache=${Date.now()}`);
       if (resp.ok) {
         const data = await resp.json();
         matchResults = data.results || {};
@@ -335,13 +334,13 @@
   async function pushToGitHub() {
     const token = getToken();
     if (!token) throw new Error('no-token');
-    // Gist PATCH needs no SHA — data lives outside the code repo and can never be overwritten by a code push
-    const resp = await fetch(GH_API, {
-      method: 'PATCH',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
-      body: JSON.stringify({ files: { 'results.json': { content: JSON.stringify({ results: matchResults }, null, 2) } } })
+    // PUT to the VPS — data lives outside the code repo and can never be overwritten by a code push
+    const resp = await fetch(API_URL, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ results: matchResults })
     });
-    if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.message || 'save-failed'); }
+    if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || 'save-failed'); }
   }
 
   // ── Shared data ──
@@ -495,7 +494,7 @@
           <div class="rubber-result ${wonState}" id="rr-${m.id}-${sec.ri}">${wonText}</div>
         </div>`;
     }).join('');
-    const noTokenHint = hasToken() ? '' : '<span class="save-hint">Add your GitHub token in Captain Settings to sync results to teammates.</span>';
+    const noTokenHint = hasToken() ? '' : '<span class="save-hint">Add the captain save key in Captain Settings to sync results to teammates.</span>';
     return `
       <div class="player-select-row">
         <label>Players:</label>
