@@ -257,6 +257,10 @@
   </div>
 </div>
 
+<div id="version-banner" style="display:none;background:#1d4ed8;color:white;padding:12px 18px;text-align:center;font-size:0.9rem;font-weight:600;line-height:1.5;">
+  🔄 A newer version of this page is available. Please refresh (Cmd/Ctrl+Shift+R) before saving — an out-of-date tab may not save correctly.
+</div>
+
 <div id="sync-banner" style="display:none;background:#b45309;color:white;padding:12px 18px;text-align:center;font-size:0.9rem;font-weight:600;line-height:1.5;">
   ⚠ You have results saved on this device that are <u>NOT</u> in the shared cloud yet.
   <button onclick="syncPending()" style="margin-left:12px;background:white;color:#b45309;border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer;">Save to cloud now</button>
@@ -287,6 +291,7 @@
   const GH_TOKEN_KEY = 'esta_vps_token';
 
   const PENDING_KEY = 'esta_pending_sync';
+  const APP_VERSION = '2026-06-13.1';  // bump on every deploy; compared against version.json to catch stale tabs
 
   function getToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
   function hasToken() { return !!getToken(); }
@@ -342,7 +347,19 @@
       : '<span style="color:rgba(255,255,255,0.5)">No token — view only mode. Anyone can still read the results.</span>';
   }
 
-  function toBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
+  // Detect a stale tab running old cached code. version.json is fetched fresh (no-store), so even
+  // a long-open tab gets the current deployed version and can warn the captain to refresh.
+  async function checkVersion() {
+    try {
+      const resp = await fetch(`version.json?cb=${Date.now()}`, { cache: 'no-store' });
+      if (!resp.ok) return;
+      const v = await resp.json();
+      if (v && v.version && v.version !== APP_VERSION) {
+        const b = document.getElementById('version-banner');
+        if (b) b.style.display = 'block';
+      }
+    } catch {}
+  }
 
   async function loadData() {
     document.getElementById('match-list').innerHTML =
@@ -375,6 +392,7 @@
   async function pushToGitHub() {
     const token = getToken();
     if (!token) throw new Error('no-token');
+    const expected = JSON.stringify(matchResults);
     // PUT to the VPS — data lives outside the code repo and can never be overwritten by a code push
     const resp = await fetch(API_URL, {
       method: 'PUT',
@@ -382,6 +400,13 @@
       body: JSON.stringify({ results: matchResults })
     });
     if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || 'save-failed'); }
+    // Read-after-write: a 2xx is NOT proof the data persisted. Fetch it back and confirm the
+    // cloud now holds exactly what we sent before we trust the save. This is what makes a
+    // "Saved ✓" honest — a stale/misrouted tab that gets a phantom success will fail here.
+    const check = await fetch(`${API_URL}?verify=${Date.now()}`);
+    if (!check.ok) throw new Error('verify-failed');
+    const back = await check.json().catch(() => null);
+    if (!back || JSON.stringify(back.results || {}) !== expected) throw new Error('verify-failed');
   }
 
   // ── Shared data ──
@@ -841,6 +866,7 @@
 
   // ── Init ──
   loadData();
+  checkVersion();
 </script>
 </body>
 </html>
