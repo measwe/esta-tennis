@@ -257,6 +257,11 @@
   </div>
 </div>
 
+<div id="sync-banner" style="display:none;background:#b45309;color:white;padding:12px 18px;text-align:center;font-size:0.9rem;font-weight:600;line-height:1.5;">
+  ⚠ You have results saved on this device that are <u>NOT</u> in the shared cloud yet.
+  <button onclick="syncPending()" style="margin-left:12px;background:white;color:#b45309;border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer;">Save to cloud now</button>
+</div>
+
 <main class="main">
   <div class="tabs">
     <button class="tab-btn active" onclick="showTab('results', this)">Match Results</button>
@@ -281,8 +286,33 @@
   const API_URL    = `${API_BASE}/results.json`;
   const GH_TOKEN_KEY = 'esta_vps_token';
 
+  const PENDING_KEY = 'esta_pending_sync';
+
   function getToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
   function hasToken() { return !!getToken(); }
+
+  function hasPending() { return localStorage.getItem(PENDING_KEY) === '1'; }
+  function setPending(v) { v ? localStorage.setItem(PENDING_KEY, '1') : localStorage.removeItem(PENDING_KEY); updateSyncBanner(); }
+  function updateSyncBanner() {
+    const b = document.getElementById('sync-banner');
+    if (b) b.style.display = hasPending() ? 'block' : 'none';
+  }
+
+  async function syncPending() {
+    try {
+      await pushToGitHub();
+      setPending(false);
+      alert('✓ Saved to the shared cloud. Your results are now backed up.');
+    } catch (err) {
+      if (err.message === 'no-token') {
+        document.getElementById('settings-panel').style.display = 'block';
+        updateTokenStatus();
+        alert('Enter the captain save key in Settings first, then click "Save to cloud now" again.');
+      } else {
+        alert('Still could not reach the cloud. Check your connection and try again.');
+      }
+    }
+  }
 
   function toggleSettings() {
     const p = document.getElementById('settings-panel');
@@ -317,18 +347,29 @@
   async function loadData() {
     document.getElementById('match-list').innerHTML =
       '<div class="loading-state"><span class="spinner"></span>Loading results…</div>';
+    let local = {};
+    try { local = JSON.parse(localStorage.getItem(RESULTS_KEY)) || {}; } catch {}
     try {
       const resp = await fetch(`${API_URL}?nocache=${Date.now()}`);
       if (resp.ok) {
         const data = await resp.json();
-        matchResults = data.results || {};
-        localStorage.setItem(RESULTS_KEY, JSON.stringify(matchResults));
+        const cloud = data.results || {};
+        if (hasPending() && Object.keys(local).length) {
+          // Local has results that were never pushed to the cloud — keep them, don't let
+          // the cloud copy silently overwrite work that hasn't been saved up yet.
+          matchResults = local;
+        } else {
+          // Cloud is the source of truth; refresh the local cache from it.
+          matchResults = cloud;
+          localStorage.setItem(RESULTS_KEY, JSON.stringify(matchResults));
+        }
       } else { throw new Error(); }
     } catch {
-      try { matchResults = JSON.parse(localStorage.getItem(RESULTS_KEY)) || {}; } catch {}
+      matchResults = local;
     }
     renderMatchList();
     updateTokenStatus();
+    updateSyncBanner();
   }
 
   async function pushToGitHub() {
@@ -605,22 +646,31 @@
       const badge=document.querySelector(`#mi-${matchId} .result-badge`);
       if(badge){badge.className=`result-badge ${cls}`;badge.textContent=lbl;}
     }
-    // GitHub sync
+    // Cloud sync
     const btn=document.getElementById(`savebtn-${matchId}`);
+
+    // No token = this CANNOT reach the shared cloud. Make that impossible to miss
+    // instead of quietly saving local-only (which a later page load could wipe).
+    if(!hasToken()){
+      setPending(true);
+      btn.textContent='⚠ NOT in cloud'; btn.style.background='#b91c1c'; btn.disabled=false;
+      document.getElementById('settings-panel').style.display='block';
+      updateTokenStatus();
+      alert('⚠ This result was saved on THIS device only — it is NOT in the shared cloud database, and could be lost.\n\nEnter the captain save key in Settings, then click "Save to cloud now" in the orange bar (or Save Match again).');
+      return;
+    }
+
     btn.textContent='Saving…'; btn.disabled=true;
     pushToGitHub().then(()=>{
+      setPending(false);
       btn.textContent='Saved ✓'; btn.style.background='#15803d'; btn.disabled=false;
       setTimeout(()=>{btn.textContent='Save Match';btn.style.background='';},2000);
-    }).catch(err=>{
+    }).catch(()=>{
+      setPending(true);
       btn.disabled=false;
-      if(err.message==='no-token'){
-        btn.textContent='Saved locally'; btn.style.background='#b45309';
-        document.getElementById('settings-panel').style.display='block';
-        updateTokenStatus();
-      } else {
-        btn.textContent='Save failed'; btn.style.background='#b91c1c';
-      }
-      setTimeout(()=>{btn.textContent='Save Match';btn.style.background='';},2500);
+      btn.textContent='⚠ Save failed — not in cloud'; btn.style.background='#b91c1c';
+      alert('Could not reach the cloud. Your result is stored on this device but is NOT shared yet. Check your connection, then click "Save to cloud now" in the orange bar.');
+      setTimeout(()=>{btn.textContent='Save Match';btn.style.background='';},3000);
     });
   }
 
@@ -629,7 +679,15 @@
     delete matchResults[matchId];
     localStorage.setItem(RESULTS_KEY,JSON.stringify(matchResults));
     renderMatchList();
-    pushToGitHub().catch(()=>{});
+    if(!hasToken()){
+      setPending(true);
+      alert('⚠ Cleared on this device only — the change is NOT in the shared cloud yet. Enter the captain save key, then click "Save to cloud now".');
+      return;
+    }
+    pushToGitHub().then(()=>setPending(false)).catch(()=>{
+      setPending(true);
+      alert('Could not reach the cloud — this change is not shared yet. Use "Save to cloud now" in the orange bar once you are back online.');
+    });
   }
 
   function toggleMatch(matchId) { document.getElementById(`mi-${matchId}`).classList.toggle('open'); }
