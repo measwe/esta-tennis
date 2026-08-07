@@ -400,7 +400,8 @@
 </main>
 
 <script>
-  const TODAY = new Date('2026-06-02');
+  const TODAY = new Date();
+  TODAY.setHours(0, 0, 0, 0);
 
   const MATCHES = [
     { id: 0, date: '2026-05-17', opponent: 'Eastside 6',   location: 'Home', type: 'regular', label: 'Match 1' },
