@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>The Programme</title>
+<meta name="description" content="A repertory season. Everything we've seen, and everything I think we should.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,300;1,500;1,600&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBF3E1;      /* sunlit programme paper (page base) — Golden Hour */
+  --paper-2:#F2E6C8;    /* deeper cream panel */
+  --card:#FFFBF0;       /* raised light card */
+  --ink:#2A2013;        /* warm near-black text */
+  --ink-2:#211B12;      /* dark surface (stubs, marquee, feature) */
+  --cream:#F3ECD9;      /* text on dark surfaces */
+  --muted:#8A7A54;      /* warm taupe secondary (on light) */
+  --muted-2:#AE9C71;    /* lighter taupe */
+  --muted-dark:#C9BA92; /* secondary on dark surfaces */
+  --verm:#E2661F;       /* lifted, warmer vermilion */
+  --verm-deep:#C2500F;  /* vermilion for text on cream */
+  --gold:#C68729;       /* deep old-gold, reads on cream */
+  --gold-bright:#F2C46A;/* marquee gold, used on dark elements */
+  --line:rgba(42,32,19,.14);
+  --line-soft:rgba(42,32,19,.09);
+  --line-strong:rgba(42,32,19,.26);
+  --maxw:1080px;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Instrument Sans",system-ui,sans-serif;
+  font-size:17px;line-height:1.6;letter-spacing:.005em;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+/* subtle paper grain */
+body::after{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode:multiply;
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.mono{font-family:"Space Mono",ui-monospace,monospace}
+.eyebrow{
+  font-family:"Space Mono",monospace;font-size:12px;font-weight:700;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--verm-deep);
+}
+a{color:inherit}
+h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:500;margin:0}
+
+/* ---------- HERO / MARQUEE ---------- */
+.hero{position:relative;min-height:auto;display:flex;flex-direction:column;
+  justify-content:center;padding:64px 0 44px;overflow:hidden}
+.hero::before{ /* warm lobby glow */
+  content:"";position:absolute;top:-30%;left:50%;transform:translateX(-50%);
+  width:120vw;height:90vh;
+  background:radial-gradient(ellipse at center,rgba(226,102,31,.10),rgba(198,135,41,.08) 40%,transparent 68%);
+  pointer-events:none;z-index:0;
+}
+.marquee{ /* a dark cinema sign, inverted against the cream */
+  position:relative;z-index:1;border:1px solid rgba(0,0,0,.35);
+  background:linear-gradient(180deg,#2b2417,#17120b);
+  border-radius:3px;padding:10px 16px;display:inline-flex;align-items:center;gap:12px;
+  align-self:center;box-shadow:0 16px 34px -22px rgba(42,32,19,.5),0 0 32px rgba(242,196,106,.10),inset 0 0 0 1px rgba(0,0,0,.4);
+}
+.bulbs{display:flex;gap:9px}
+.bulb{width:7px;height:7px;border-radius:50%;background:var(--gold-bright);
+  box-shadow:0 0 8px var(--gold-bright),0 0 2px #fff inset;animation:flick 3s infinite steps(1)}
+.bulb:nth-child(2){animation-delay:.4s}.bulb:nth-child(3){animation-delay:.9s}
+.bulb:nth-child(4){animation-delay:1.3s}.bulb:nth-child(5){animation-delay:1.7s}
+@keyframes flick{0%,92%{opacity:1}94%{opacity:.35}96%{opacity:1}98%{opacity:.5}100%{opacity:1}}
+.marquee .now{font-family:"Space Mono",monospace;font-size:12px;font-weight:700;
+  letter-spacing:.3em;color:var(--gold-bright);text-transform:uppercase}
+.hero-inner{position:relative;z-index:1;text-align:center;margin-top:26px}
+.hero-eyebrow{display:block;margin-bottom:18px}
+.hero h1{
+  font-size:clamp(2.2rem,5.6vw,4.2rem);line-height:1.04;letter-spacing:-.01em;
+  max-width:17ch;margin:0 auto;color:var(--ink);
+}
+.hero h1 em{font-style:italic;color:var(--verm)}
+.hero .lede{max-width:52ch;margin:22px auto 0;color:var(--muted);font-size:1.04rem}
+.hero .lede b{color:var(--ink);font-weight:600}
+.scrollcue{margin-top:30px;display:inline-flex;flex-direction:column;align-items:center;
+  gap:6px;color:var(--muted);font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.24em}
+.scrollcue span{width:1px;height:26px;background:linear-gradient(var(--verm),transparent)}
+
+/* ---------- SECTION SHELL ---------- */
+section{position:relative;padding:96px 0;border-top:1px solid var(--line-soft)}
+.sec-head{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:14px}
+.sec-head h2{font-size:clamp(2rem,4.4vw,3.2rem);letter-spacing:-.01em}
+.sec-note{color:var(--muted);max-width:56ch;margin:0 0 46px;font-size:1.02rem}
+.sec-note em{color:var(--verm-deep);font-style:italic}
+
+/* ---------- TICKET STUBS (past): dark tickets on cream ---------- */
+.stubs{display:grid;gap:22px}
+.stub{
+  display:grid;grid-template-columns:88px 1fr auto;gap:0;align-items:stretch;
+  background:var(--ink-2);color:var(--cream);border-radius:5px;overflow:hidden;
+  box-shadow:0 22px 46px -28px rgba(36,30,21,.6);position:relative;
+  transform:translateY(14px);opacity:0;transition:transform .7s var(--ease),opacity .7s var(--ease);
+}
+.stub.in{transform:none;opacity:1}
+.stub-no{background:var(--verm);color:#FFF1EA;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-family:"Space Mono",monospace;
+  gap:4px;padding:16px 6px;position:relative}
+.stub-no b{font-size:1.5rem;font-weight:700;line-height:1}
+.stub-no small{font-size:9px;letter-spacing:.2em;color:rgba(255,255,255,.72)}
+.stub-no::after{ /* perforation */
+  content:"";position:absolute;right:-6px;top:0;bottom:0;width:12px;
+  background:radial-gradient(circle at right,transparent 5px,var(--ink-2) 5px) 0 0/12px 14px repeat-y;
+}
+.stub-body{padding:20px 24px}
+.stub-body .when{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(233,182,90,.85)}
+.stub-body h3{font-size:1.7rem;line-height:1.1;margin:4px 0 2px;color:#F5EFDD}
+.stub-body .venue{font-size:.9rem;color:var(--muted-dark);font-weight:500}
+.stub-body .cap{margin:12px 0 0;font-size:.98rem;color:#D9CFB9;max-width:52ch}
+.stub-rate{padding:20px 24px;border-left:1px dashed rgba(255,255,255,.18);
+  display:flex;flex-direction:column;justify-content:center;align-items:flex-end;min-width:150px;text-align:right}
+.stub-rate .stars{color:var(--gold-bright);font-size:1.05rem;letter-spacing:2px;filter:drop-shadow(0 0 6px rgba(233,182,90,.3))}
+.stub-rate .lab{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted-dark);margin-top:6px}
+/* confirmed / booked upcoming stubs (clickable) */
+.stub.booked{text-decoration:none;cursor:pointer}
+.stub.booked:hover{box-shadow:0 26px 52px -26px rgba(36,30,21,.68)}
+.confirmed{display:inline-flex;align-items:center;gap:6px;font-family:"Space Mono",monospace;
+  font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#FFF1EA;
+  background:var(--verm);padding:6px 12px;border-radius:20px;white-space:nowrap}
+.stub-rate .go{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted-dark);margin-top:8px;transition:color .25s var(--ease)}
+.stub.booked:hover .go{color:var(--gold-bright)}
+
+/* ---------- FEATURE (Melbourne): bold dark card ---------- */
+.feature{background:
+  radial-gradient(ellipse at 80% 0,rgba(233,182,90,.16),transparent 55%),
+  linear-gradient(180deg,#2b2417,#15110b);
+  border:1px solid rgba(0,0,0,.3);border-radius:8px;padding:clamp(30px,5vw,60px);
+  position:relative;overflow:hidden;box-shadow:0 34px 64px -34px rgba(36,30,21,.5)}
+.feature .stamp{
+  position:absolute;top:26px;right:-46px;transform:rotate(12deg);
+  background:var(--verm);color:#FFF1EA;font-family:"Space Mono",monospace;
+  font-weight:700;font-size:11px;letter-spacing:.24em;padding:8px 60px;text-transform:uppercase;
+  box-shadow:0 8px 20px -8px rgba(210,59,31,.55)}
+.feature .kicker{color:var(--gold-bright);margin-bottom:18px}
+.feature h2{font-size:clamp(2.4rem,6vw,4.4rem);line-height:1;letter-spacing:-.02em;color:#F5EFDD}
+.feature h2 em{font-style:italic}
+.feature .meta{font-family:"Space Mono",monospace;font-size:13px;letter-spacing:.14em;
+  color:rgba(233,182,90,.85);margin-top:16px;text-transform:uppercase}
+.feature p{max-width:50ch;color:#C7BCA4;margin:22px 0 30px}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;font-family:"Space Mono",monospace;
+  font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;
+  color:#FFF1EA;background:var(--verm);padding:14px 24px;border-radius:4px;
+  transition:transform .25s var(--ease),box-shadow .25s var(--ease);box-shadow:0 12px 30px -12px rgba(210,59,31,.55)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 16px 36px -12px rgba(210,59,31,.7)}
+.btn .arw{transition:transform .25s var(--ease)}
+.btn:hover .arw{transform:translateX(4px)}
+
+/* ---------- PROGRAMME (proposal board) ---------- */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px}
+.pcard{
+  background:var(--card);
+  border:1px solid var(--line);border-radius:7px;padding:20px 20px 22px;
+  display:flex;flex-direction:column;gap:10px;position:relative;
+  transition:transform .5s var(--ease),border-color .4s var(--ease),box-shadow .4s var(--ease);
+  transform:translateY(16px);opacity:0}
+.pcard.in{transform:none;opacity:1}
+.pcard:hover{border-color:var(--line-strong);box-shadow:0 22px 46px -30px rgba(42,32,19,.38)}
+.pcard .swatch{height:56px;border-radius:5px;background:linear-gradient(135deg,var(--sc1,var(--paper-2)),var(--sc2,var(--gold-bright)))}
+.pcard h3{font-size:1.5rem;line-height:1.1;color:var(--ink)}
+.pcard .where{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.1em;
+  color:var(--muted);text-transform:uppercase}
+.pcard .syn{color:#574433;font-size:.92rem;margin:0;flex:1}
+.pcard .link{margin-top:4px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.08em;
+  color:var(--muted);text-decoration:none;display:inline-flex;gap:6px;align-items:center;align-self:flex-start}
+.pcard .link:hover{color:var(--verm-deep)}
+.pcard .link .arw{transition:transform .25s var(--ease)}
+.pcard.clickable{cursor:pointer}
+.pcard.clickable:hover{border-color:var(--line-strong)}
+.pcard.clickable:hover .link{color:var(--verm-deep)}
+.pcard.clickable:hover .link .arw,.pcard .link:hover .arw{transform:translateX(4px)}
+.pcard .link:focus-visible{outline:2px solid var(--verm);outline-offset:3px;border-radius:3px}
+
+/* wildcard card */
+.pcard.add{border-style:dashed;background:transparent;justify-content:flex-start}
+.pcard.add h3{font-size:1.2rem;color:var(--muted)}
+.pcard.add textarea{
+  width:100%;margin-top:4px;background:#fff;border:1px solid var(--line);
+  border-radius:5px;color:var(--ink);font-family:"Instrument Sans",sans-serif;font-size:.96rem;
+  padding:12px;resize:vertical;min-height:76px;flex:1}
+.pcard.add textarea:focus{outline:none;border-color:var(--verm)}
+
+/* ---------- VERDICT / SUBMIT ---------- */
+.verdict{margin-top:52px;text-align:center;border:1px solid var(--line);border-radius:8px;
+  padding:clamp(28px,5vw,48px);background:radial-gradient(ellipse at top,rgba(210,59,31,.07),transparent 70%)}
+.verdict h3{font-size:clamp(1.8rem,4vw,2.6rem);color:var(--ink)}
+.verdict p{color:var(--muted);max-width:46ch;margin:12px auto 26px}
+.verdict .field{display:flex;gap:12px;max-width:440px;margin:0 auto;flex-wrap:wrap;justify-content:center}
+.verdict input{flex:1;min-width:200px;background:#fff;border:1px solid var(--line);
+  border-radius:4px;color:var(--ink);font-family:"Instrument Sans",sans-serif;font-size:1rem;padding:14px 16px}
+.verdict input:focus{outline:none;border-color:var(--verm)}
+.verdict .send{border:none;cursor:pointer}
+.verdict .status{margin-top:18px;font-family:"Space Mono",monospace;font-size:12px;
+  letter-spacing:.08em;color:var(--verm-deep);min-height:1.4em}
+
+/* ---------- COLOPHON ---------- */
+.colophon{text-align:center;padding:80px 0 90px;border-top:1px solid var(--line-soft);color:var(--muted)}
+.colophon .prod{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--verm-deep)}
+.colophon .sign{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:1.6rem;
+  color:var(--ink);margin:18px auto;max-width:34ch;line-height:1.3}
+.colophon small{font-family:"Space Mono",monospace;font-size:14px;line-height:1.8;letter-spacing:.06em;color:var(--muted);display:block;margin-top:24px}
+
+/* ---------- END CREDITS ---------- */
+.ending{background:linear-gradient(180deg,#2b2417,#15110b);color:var(--cream);
+  position:relative;overflow:hidden;text-align:center;padding:96px 0 110px;border-top:1px solid rgba(0,0,0,.3)}
+.ending::before{content:"";position:absolute;top:-15%;left:50%;transform:translateX(-50%);
+  width:120vw;height:70vh;background:radial-gradient(ellipse at center,rgba(233,182,90,.12),transparent 66%);pointer-events:none}
+.ending .eyebrow{color:var(--gold-bright);position:relative}
+.ending h2{color:#F5EFDD;max-width:18ch;margin:22px auto 8px;position:relative;
+  font-size:clamp(2rem,4.4vw,3.2rem);letter-spacing:-.01em}
+.ending h2 em{font-style:italic;color:var(--gold-bright)}
+.ending .sub{color:var(--muted-dark);max-width:46ch;margin:0 auto;font-size:1.05rem;position:relative}
+.credits{margin:54px auto 10px;max-width:540px;position:relative;text-align:left}
+.credits .row{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:11px 0;
+  border-bottom:1px solid rgba(243,236,217,.10)}
+.credits .role{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted-dark);text-align:right;padding-top:3px}
+.credits .name{font-family:"Cormorant Garamond",serif;font-size:1.35rem;color:#F1EAD7;line-height:1.25}
+.countdown{margin:60px auto 0;position:relative}
+.cd-label{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--verm);margin-bottom:22px}
+.flips{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.flip-unit{display:flex;flex-direction:column;align-items:center;gap:12px}
+.flip-card{position:relative;width:92px;height:104px;border-radius:10px;
+  background:linear-gradient(180deg,#332a19,#221c11);
+  box-shadow:0 16px 34px -18px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;perspective:400px}
+.flip-card::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;
+  background:rgba(0,0,0,.5);transform:translateY(-.5px);z-index:3}
+.flip-num{font-family:"Space Mono",monospace;font-weight:700;font-size:3.1rem;color:var(--gold-bright);
+  line-height:1;backface-visibility:hidden}
+.flip-card.flipping{animation:flipx .32s var(--ease)}
+@keyframes flipx{0%{transform:rotateX(0)}48%{transform:rotateX(-88deg)}100%{transform:rotateX(0)}}
+.flip-label{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-dark)}
+.cd-target{margin-top:26px;font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.1em;color:var(--muted-dark)}
+.the-end{margin-top:70px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:2.4rem;color:#F5EFDD;position:relative}
+@media (max-width:560px){
+  .flip-card{width:70px;height:82px}
+  .flip-num{font-size:2.3rem}
+  .credits .row{grid-template-columns:1fr;gap:2px;text-align:center}
+  .credits .role{text-align:center}
+}
+@media (prefers-reduced-motion:reduce){ .flip-card.flipping{animation:none} }
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .stub{grid-template-columns:64px 1fr}
+  .stub-rate{grid-column:1/-1;border-left:none;border-top:1px dashed rgba(255,255,255,.18);
+    align-items:flex-start;text-align:left;flex-direction:row;gap:12px;min-width:0}
+  .stub-no::after{display:none}
+  .feature .stamp{right:-56px;top:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  .bulb{animation:none}
+  .stub,.pcard{transition:none;transform:none;opacity:1}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+    <div class="marquee">
+      <div class="bulbs"><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i></div>
+      <span class="now">Now Showing</span>
+      <div class="bulbs"><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i></div>
+    </div>
+    <div class="hero-inner">
+      <span class="eyebrow hero-eyebrow">A Repertory Programme · Curated by Carl · Est. July 2026</span>
+      <h1>Two people, still hopelessly failing to find anything to <em>disagree</em> on.</h1>
+      <p class="lede">So, a season. <b>Everything we've seen, and everything I think we should.</b> Have a look at what's proposed below. Say the word and I'll book it.</p>
+      <a class="scrollcue" href="#season">Roll it<span></span></a>
+    </div>
+  </div>
+</header>
+
+<!-- ================= THE SEASON SO FAR ================= -->
+<section id="season">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">01 · Retrospective</span>
+    </div>
+    <div class="sec-head"><h2>The season so far.</h2></div>
+
+    <div class="stubs" id="seen-stubs"><!-- injected by JS from DIARY, ordered by date --></div>
+  </div>
+</section>
+
+<!-- ================= FEATURE PRESENTATION ================= -->
+<section id="melbourne">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">02 · Feature Presentation</span></div>
+    <div class="feature">
+      <div class="stamp">Tickets Confirmed</div>
+      <span class="eyebrow kicker">A weekend away · Melbourne</span>
+      <h2>The <em>Odyssey</em></h2>
+      <div class="meta">Friday 19 September · A very big film, a very big screen</div>
+      <p>The one that's actually locked in. A cool city you already love, coats you already own, and ten years of Homer in 70mm. The rest of the weekend lives in here:</p>
+      <a class="btn" id="deckLink" href="https://1drv.ms/p/c/5851e65dca3276db/IQDksRjg2YGoQLRmaFTn6sbeAfug7ldDySkwGck2DW_6qlY?e=IzIEDD" target="_blank" rel="noopener">
+        View the weekend <span class="arw">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ALSO CONFIRMED ================= -->
+<section id="confirmed">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">03 · Also Confirmed</span></div>
+    <div class="sec-head"><h2>Also in the diary.</h2></div>
+
+    <div class="stubs" id="confirmed-stubs"><!-- injected by JS from DIARY, ordered by date --></div>
+  </div>
+</section>
+
+<!-- ================= THE PROGRAMME (VOTE) ================= -->
+<section id="programme">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">04 · Now Programming</span></div>
+    <div class="sec-head"><h2>What's on the table.</h2></div>
+    <p class="sec-note">Everything either of us has put up. Say the word and I'll book it.</p>
+
+    <div class="board" id="grid">
+      <!-- cards injected by JS from DATA; static fallback below for no-JS -->
+    </div>
+
+    <div class="verdict">
+      <h3>Your verdict, then.</h3>
+      <p>A pick, a note, a change of plan — whatever you've got. File it below.</p>
+      <div class="field">
+        <button class="btn send" id="send">Send Carl my demands</button>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COLOPHON ================= -->
+<footer class="colophon">
+  <div class="wrap">
+    <div class="prod">A Carl &amp; Panda Production</div>
+    <p class="sign">We'll find something to disagree on eventually. Today is not that day.</p>
+    <small>Your notes are saved to this page · No wine was harmed in the making of this season</small>
+  </div>
+</footer>
+
+<script>
+const BASE = "/amanda";
+
+// ── THE DIARY ────────────────────────────────────────────────────────────────
+// One list, one date each. Anything whose date has passed moves itself out of
+// "03 · Also Confirmed" and into "01 · Retrospective" — no edit needed. Both
+// sections always render in date order, so the list below can be in any order.
+// Add a night: drop it in with its date. Add `stars`/`lab` once we've seen it,
+// and `capSeen` if the caption should read differently in hindsight.
+const DIARY = [
+  { date:"2026-07-11", place:"Art Gallery of NSW", title:"Clockers",
+    venue:"Spike Lee · with a lunch beforehand",
+    cap:"Our first proper feature. A café, a gallery, and one Spike Lee joint. As opening nights go, a strong one.",
+    stars:"★★★★☆", lab:"Top Tier" },
+  { date:"2026-07-18", place:"New Theatre, Newtown", title:"The Day of the Triffids",
+    venue:"Cocktails at Uncanny · killer plants after",
+    cap:"The best-reviewed night of the season so far. We'll leave the reasons off the record.",
+    stars:"★★★★<span style=\"font-size:.8em\">½</span>", lab:"True Cinema" },
+  { date:"2026-07-29", place:"Nordic Film Festival", title:"ÁRRU",
+    venue:"Seat 4C, as originally promised",
+    cap:"The film that started this whole conversation, finally seen together. Turns out three weeks wasn't long enough to forget about it.",
+    stars:"★★★★☆", lab:"Top Tier" },
+  { date:"2026-08-29", place:"Chippendale", title:"White Rabbit: Black Myth",
+    venue:"White Rabbit Gallery · the new exhibition",
+    cap:"Your pick, now on the calendar. Four floors, the good tea room, and the new show.",
+    capSeen:"Your pick, and a good one. Four floors, the good tea room, and the new show.",
+    href:"https://whiterabbitcollection.org/exhibition/black-myth/" },
+  { date:"2026-09-12", place:"Sydney Fringe", title:"SEXretary: Tales from a Red Light Receptionist",
+    venue:"Sydney Fringe Festival",
+    cap:"Exactly the kind of high and low we're here for. Booked.",
+    href:"https://sydneyfringe.com/events/sexretary-tales-from-a-red-light-receptionist/" },
+];
+
+const MONTHS_SHORT=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function diaryDate(iso){ const [y,m,d]=iso.split("-").map(Number); return new Date(y,m-1,d); }
+function today(){ const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate()); }
+// A night stays in "Also Confirmed" all through its own day, and moves the day after.
+function isPast(item){ return diaryDate(item.date) < today(); }
+function byDate(a,b){ return diaryDate(a.date) - diaryDate(b.date); }
+function fmtWhen(iso,long){
+  return diaryDate(iso).toLocaleDateString("en-AU",{weekday:long?"long":"short",day:"numeric",month:"long"});
+}
+
+function stubBody(item, when, cap){
+  return `<div class="stub-body">
+          <div class="when">${when} · ${item.place}</div>
+          <h3>${item.title}</h3>
+          <div class="venue">${item.venue}</div>
+          <p class="cap">${cap}</p>
+        </div>`;
+}
+function stubShell(item, inner){
+  return item.href
+    ? `<a class="stub booked" href="${item.href}" target="_blank" rel="noopener">${inner}</a>`
+    : `<article class="stub">${inner}</article>`;
+}
+
+function seenStub(item, i){
+  const no = `<div class="stub-no"><small>No.</small><b>${String(i+1).padStart(2,"0")}</b></div>`;
+  const rate = item.stars
+    ? `<div class="stars" aria-hidden="true">${item.stars}</div><div class="lab">${item.lab||""}</div>`
+    : `<div class="lab">Verdict pending</div>`;
+  return stubShell(item, `${no}${stubBody(item, fmtWhen(item.date,false), item.capSeen||item.cap)}
+        <div class="stub-rate">${rate}</div>`);
+}
+
+function confirmedStub(item){
+  const d = diaryDate(item.date);
+  const no = `<div class="stub-no"><small>${MONTHS_SHORT[d.getMonth()]}</small><b>${d.getDate()}</b></div>`;
+  return stubShell(item, `${no}${stubBody(item, fmtWhen(item.date,true), item.cap)}
+        <div class="stub-rate">
+          <span class="confirmed">✓ Confirmed</span>
+          ${item.href?'<div class="go">Details →</div>':""}
+        </div>`);
+}
+
+function renderDiary(){
+  const seen = DIARY.filter(isPast).sort(byDate);
+  const upcoming = DIARY.filter(i=>!isPast(i)).sort(byDate);
+  document.getElementById("seen-stubs").innerHTML = seen.map(seenStub).join("");
+  document.getElementById("confirmed-stubs").innerHTML = upcoming.map(confirmedStub).join("");
+  // An empty section is worse than no section at all.
+  document.getElementById("season").hidden = seen.length === 0;
+  document.getElementById("confirmed").hidden = upcoming.length === 0;
+}
+
+const DATA = [
+  { key:"italian-ff", title:"Italian Film Festival", sc:["#F0DCAE","#E2B46A"],
+    where:"In cinemas", link:{href:"https://italianfilmfestival.com.au/",text:"italianfilmfestival.com.au"},
+    syn:"Your call entirely. Pick the ones with the best posters and the worst descriptions. Blind picks only, festival rules." },
+  { key:"camp-miasma", title:"Teenage Sex and Death at Camp Miasma", sc:["#E8C9C1","#C98D7E"],
+    where:"Ritz Cinemas, Randwick", link:{href:"https://www.ritzcinemas.com.au/movies/teenage-sex-and-death-at-camp-miasma",text:"ritzcinemas.com.au"},
+    syn:"Peak schlock at the Ritz. Bestie #2 would approve. High and low, exactly as you always say." },
+  { key:"akira", title:"Akira", sc:["#CDDCD6","#8FADA2"],
+    where:"A rep screening, ideally", link:{href:"https://letterboxd.com/film/akira/",text:"letterboxd.com"},
+    syn:"I know. I still haven't seen it. Let's fix the one thing you were genuinely scandalised by: you, me, and 1988 Neo-Tokyo." },
+  { key:"games-night", title:"Cinephile: Games Night", sc:["#E6D5EA","#B48FBD"],
+    where:"Somewhere with a good sofa", link:{href:"https://www.cinephilegame.com/",text:"cinephilegame.com"},
+    syn:"The movie card games you own and have never played. I'll bring the Old Fashioneds and explain the rules exactly once." },
+  { key:"jazz-vinyl", title:"Jazz, on Vinyl", sc:["#D7DDE8","#94A3BF"],
+    where:"A small room, a stand-up bass", link:{href:"https://sydney.jazzcalendars.com/",text:"what's on in sydney jazz"},
+    syn:"A proper jazz night. A whiskey that isn't trying to prove anything, and not a drop of matcha in sight." },
+  { key:"galleries", title:"Invisible Forests + Chrissie Cotter", sc:["#E3DDC7","#B7AC82"],
+    where:"Roslyn Oxley9, then Woollahra", link:{href:"https://www.roslynoxley9.com.au/",text:"roslynoxley9.com.au"},
+    syn:"The show you flagged at Roslyn Oxley9, then Chrissie Cotter: a first for us both. Dumplings in the middle, non-negotiable." },
+  { key:"french-wave", title:"A French New Wave Double", sc:["#ECD3C3","#CF9A76"],
+    where:"Whatever's screening", link:{href:"https://letterboxd.com/studystilllife/lists/",text:"from your Letterboxd lists"},
+    syn:"Two from your list: Melville, Godard, whoever's on. Followed by the compulsory post-movie debrief. That's the whole point." },
+];
+
+const voterKey = "amanda_programme_voter";
+let voterId = localStorage.getItem(voterKey);
+if(!voterId){ voterId = "v" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(voterKey, voterId); }
+
+function render(){
+  const grid = document.getElementById("grid");
+  DATA.forEach(d=>{
+    const c = document.createElement("article");
+    c.className="pcard"; c.dataset.key=d.key;
+    const link = d.link ? `<a class="link" href="${d.link.href}" target="_blank" rel="noopener">${d.link.text} <span class="arw">→</span></a>` : "";
+    c.innerHTML = `<div class="swatch" style="--sc1:${d.sc[0]};--sc2:${d.sc[1]}"></div>
+      <h3>${d.title}</h3>
+      <div class="where">${d.where}</div>
+      <p class="syn">${d.syn}</p>${link}`;
+    if(d.link){
+      c.classList.add("clickable");
+      c.addEventListener("click",e=>{
+        if(e.target.closest("a")) return;
+        const a=c.querySelector("a.link"); if(a) a.click();   // reuse the real anchor (not popup-blocked)
+      });
+    }
+    grid.appendChild(c);
+  });
+  // wildcard card
+  const w = document.createElement("article");
+  w.className="pcard add";
+  w.innerHTML = `<h3>+ Put one up</h3>
+    <textarea id="wildnote" placeholder="Go on, surprise me."></textarea>`;
+  document.getElementById("grid").appendChild(w);
+  observe();
+  restore();
+}
+
+function restore(){
+  fetch(`${BASE}/api/state?voter=${encodeURIComponent(voterId)}`)
+    .then(r=>r.json()).then(s=>{
+      if(s.note) document.getElementById("wildnote").value = s.note;
+    }).catch(()=>{});
+}
+
+function send(){
+  const status=document.getElementById("status");
+  const btn=document.getElementById("send");
+  const payload={
+    voter:voterId,
+    name:"Amanda",
+    note:document.getElementById("wildnote").value.trim(),
+    ratings:{}
+  };
+  if(!payload.note){
+    status.textContent="Leave me a note, then send.";
+    return;
+  }
+  btn.disabled=true; status.textContent="Filing…";
+  fetch(`${BASE}/api/vote`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+    .then(r=>r.json()).then(res=>{
+      if(res.ok){ status.textContent="Filed. I'll read it properly. Carl"; }
+      else { status.textContent="Hm, that didn't send. Try once more?"; btn.disabled=false; }
+    }).catch(()=>{ status.textContent="Hm, that didn't send. Try once more?"; btn.disabled=false; });
+}
+
+// scroll reveal
+function observe(){
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }),{threshold:.15});
+  document.querySelectorAll(".stub,.pcard").forEach(el=>io.observe(el));
+}
+
+document.getElementById("send").addEventListener("click",send);
+renderDiary();
+render();
+
+</script>
+</body>
+</html>
