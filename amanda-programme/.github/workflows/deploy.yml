@@ -1,0 +1,90 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the page is well formed
+        run: python3 .github/scripts/check_page.py index.html
+
+      - name: Require TARGET_PATH
+        env:
+          TARGET_PATH: ${{ vars.TARGET_PATH }}
+        run: |
+          if [ -z "$TARGET_PATH" ]; then
+            echo "TARGET_PATH is not set."
+            echo "Set it under Settings -> Secrets and variables -> Actions -> Variables,"
+            echo "to the directory the FastAPI app serves the page from,"
+            echo "for example /srv/amanda/static"
+            exit 1
+          fi
+
+      - name: Stamp the build
+        run: |
+          mkdir -p dist
+          cp index.html dist/index.html
+          printf '\n<!-- build %s -->\n' "$GITHUB_SHA" >> dist/index.html
+          echo "Stamped $GITHUB_SHA"
+
+      - name: Load the SSH key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::SSH_KNOWN_HOSTS is not set; trusting the host key on first use. See the README."
+            ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Copy the page to the server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          TARGET_PATH: ${{ vars.TARGET_PATH }}
+        run: |
+          rsync -avz --checksum \
+            -e "ssh -i ~/.ssh/id_deploy -p ${SSH_PORT:-22}" \
+            dist/index.html \
+            "$SSH_USER@$SSH_HOST:${TARGET_PATH%/}/index.html"
+
+      - name: Confirm the live page is serving this build
+        if: vars.SITE_URL != ''
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS --max-time 20 "$SITE_URL" | grep -qF "build $GITHUB_SHA"; then
+              echo "Live page is serving $GITHUB_SHA."
+              exit 0
+            fi
+            echo "Not visible yet (attempt $attempt of 5); waiting 5s."
+            sleep 5
+          done
+          echo "::error::rsync succeeded but $SITE_URL is not serving $GITHUB_SHA."
+          echo "Either TARGET_PATH does not point at the directory the app reads from,"
+          echo "or the app holds the page in memory and needs a restart."
+          exit 1
